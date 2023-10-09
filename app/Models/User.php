@@ -41,4 +41,9 @@ class User extends Authenticatable
     protected $casts = [
         'email_verified_at' => 'datetime',
     ];
+
+    public function currentAccessToken()
+    {
+        return $this->token(); // Assuming you have a 'token' relationship defined in your User model
+    }
 }
