@@ -5,108 +5,68 @@ namespace App\Http\Controllers;
 use App\Models\User;
 use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
 
 class AuthController extends Controller
 {
-    /**
-     * Create User
-     * @param Request $request
-     * @return User 
-     */
-    public function register(Request $request)
+    public function index()
     {
-        try {
-            //Validated
-            $validateUser = Validator::make(
-                $request->all(),
-                [
-                    'name' => 'required',
-                    'email' => 'required|email|unique:users,email',
-                    'password' => 'required'
-                ]
-            );
-
-            if ($validateUser->fails()) {
-                return response()->json([
-                    'status' => false,
-                    'message' => 'validation error',
-                    'errors' => $validateUser->errors()
-                ], 401);
-            }
-
-            $user = User::create([
-                'name' => $request->name,
-                'email' => $request->email,
-                'password' => Hash::make($request->password)
-            ]);
-
-            return response()->json([
-                'status' => true,
-                'message' => 'User Created Successfully',
-                'token' => $user->createToken("API TOKEN")->plainTextToken
-            ], 200);
-        } catch (\Throwable $th) {
-            return response()->json([
-                'status' => false,
-                'message' => $th->getMessage()
-            ], 500);
-        }
+        return view('login');
     }
 
-    /**
-     * Login The User
-     * @param Request $request
-     * @return User
-     */
-    public function login(Request $request)
+    public function registerView()
     {
-        try {
-            $validateUser = Validator::make(
-                $request->all(),
-                [
-                    'email' => 'required|email',
-                    'password' => 'required'
-                ]
-            );
+        return view('register');
+    }
 
-            if ($validateUser->fails()) {
-                return response()->json([
-                    'status' => false,
-                    'message' => 'validation error',
-                    'errors' => $validateUser->errors()
-                ], 401);
-            }
+    public function authenticate(Request $request): RedirectResponse // Login function
+    {
+        $user = $request->validate([
+            'email' => 'required|email',
+            'password' => 'required'
+        ]);
 
-            if (!Auth::attempt($request->only(['email', 'password']))) {
-                return response()->json([
-                    'status' => false,
-                    'message' => 'Email & Password does not match with our record.',
-                ], 401);
-            }
+        if (Auth::attempt($user)) {
+            $request->session()->regenerate();
 
-            $user = User::where('email', $request->email)->first();
-
-            return response()->json([
-                'status' => true,
-                'message' => 'User Logged In Successfully',
-                'token' => $user->createToken("API TOKEN")->plainTextToken
-            ], 200);
-        } catch (\Throwable $th) {
-            return response()->json([
-                'status' => false,
-                'message' => $th->getMessage()
-            ], 500);
+            return redirect()->intended('dashboard')->with('message', 'Berhasil Login');
         }
+
+        return back()->withErrors([
+            'email' => 'Data tidak cocok'
+        ])->onlyInput('email');
+    }
+
+    public function register(Request $request): RedirectResponse
+    {
+        $validatedData = $request->validate([
+            'name' => 'required|string|max:255',
+            'email' => 'required|email|unique:users',
+            'password' => 'required',
+        ]);
+
+        $user = User::create([
+            'name' => $validatedData['name'],
+            'email' => $validatedData['email'],
+            'password' => bcrypt($validatedData['password']),
+        ]);
+
+        // You can log in the user after registration if desired
+        Auth::login($user);
+
+        return redirect()->route('login-view')->with('message', 'Akun berhasil didaftarkan');
     }
 
     public function logout(Request $request)
     {
-        $user = $request->user();
-        $user->tokens()->delete();
+        Auth::logout();
+        $request->session()->invalidate();
 
-        return response()->json(['message' => 'Logged out'], 200);
+        $request->session()->regenerateToken();
+
+        return redirect('/login');
     }
 }
