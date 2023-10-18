@@ -17,7 +17,7 @@ use Illuminate\Support\Facades\Route;
 
 //Auth
 Route::get('/register', [AuthController::class, 'registerView'])->name('register-view');
-Route::get('/login', [AuthController::class, 'index'])->name('login-view');
+Route::get('/', [AuthController::class, 'index'])->name('login-view');
 Route::post('/loginAuth', [AuthController::class, 'authenticate'])->name('login-auth');
 Route::post('/regist', [AuthController::class, 'register'])->name('register-auth');
 Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
@@ -30,9 +30,8 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/dashboard', $controller_path . '\dashboard\Analytics@index')->name('dashboard-analytics');
 
     // pages
-    Route::get('/pages/account-settings-account', $controller_path . '\pages\AccountSettingsAccount@index')->name('pages-account-settings-account');
-    Route::get('/pages/account-settings-notifications', $controller_path . '\pages\AccountSettingsNotifications@index')->name('pages-account-settings-notifications');
-    Route::get('/pages/account-settings-connections', $controller_path . '\pages\AccountSettingsConnections@index')->name('pages-account-settings-connections');
+    Route::get('/pages/account-settings-account', [AuthController::class, 'profile'])->name('profile');
+    Route::get('/pages/account-settings-notifications', $controller_path . '\pages\AccountSettingsNotifications@index')->name('profile-history');
     Route::get('/pages/misc-error', $controller_path . '\pages\MiscError@index')->name('pages-misc-error');
     Route::get('/pages/misc-under-maintenance', $controller_path . '\pages\MiscUnderMaintenance@index')->name('pages-misc-under-maintenance');
 

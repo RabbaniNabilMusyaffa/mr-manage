@@ -17,6 +17,20 @@ class AuthController extends Controller
         return view('login');
     }
 
+    public function profile(Request $request)
+    {
+        // Retrieve user data from the session
+        $user = $request->session()->get('user');
+
+        // Check if the user is authenticated (optional, but recommended)
+        if (!$user) {
+            // Redirect the user or perform some other action for unauthenticated users
+        }
+
+        return view('content.pages.pages-account-settings-account', ['user' => $user]);
+    }
+
+
     public function registerView()
     {
         return view('register');
@@ -30,7 +44,9 @@ class AuthController extends Controller
         ]);
 
         if (Auth::attempt($user)) {
-            $request->session()->regenerate();
+            // Store user data in the session
+            $user = Auth::user();
+            $request->session()->put('user', $user);
 
             return redirect()->intended('dashboard')->with('message', 'Berhasil Login');
         }
@@ -67,6 +83,6 @@ class AuthController extends Controller
 
         $request->session()->regenerateToken();
 
-        return redirect('/login');
+        return redirect('/');
     }
 }
